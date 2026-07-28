@@ -22,16 +22,16 @@ class CPAnalyticsDashboard:
         st.set_page_config(page_title="CF Analytics", layout="wide")
 
     def _render_sidebar(self):
-        st.sidebar.caption("Para múltiplas contas, separe por vírgula.")
-        input_handles = st.sidebar.text_input("Handles (CF e/ou AtCoder)", value="tourist")
-        btn_carregar = st.sidebar.button("Analisar", type="primary")
+        st.sidebar.caption("For multiple accounts, separate with commas.")
+        input_handles = st.sidebar.text_input("Handles (CF and/or AtCoder)", value="tourist")
+        btn_carregar = st.sidebar.button("Start", type="primary")
 
         if btn_carregar:
             st.session_state["handles_str"] = input_handles
 
         self.handles_str = st.session_state.get("handles_str")
         if self.handles_str:
-            with st.spinner(f"Processando {self.handles_str}..."):
+            with st.spinner(f"Processing {self.handles_str}..."):
                 self.analytics = load_analytics_data(self.handles_str)
 
     def _render_upsolving_tab(self):
@@ -68,7 +68,7 @@ class CPAnalyticsDashboard:
             st.dataframe(
                 df,
                 column_config={"Link": st.column_config.LinkColumn("Link", display_text="Abrir 🔗")},
-                use_container_width=True, hide_index=True
+                width='stretch', hide_index=True
             )
             st.download_button("📥 Baixar CSV", data=df.to_csv(index=False).encode('utf-8'), file_name="upsolving.csv", mime="text/csv")
         else:
@@ -83,10 +83,9 @@ class CPAnalyticsDashboard:
                     st.markdown(f"- **[{p.index} - {p.name}]({p.url})** | Rating: `{p.rating}`")
 
     def _render_charts_tab(self):
-        st.subheader("Análise Gráfica")
         c1, c2 = st.columns(2)
         
-        intervalo = c1.date_input("Período", value=(date.today() - timedelta(days=365), date.today()), max_value=date.today())
+        intervalo = c1.date_input("Epoch", value=(date.today() - timedelta(days=365), date.today()), max_value=date.today())
         start_ts, end_ts = None, None
         if len(intervalo) == 2:
             start_ts = int(time.mktime(intervalo[0].timetuple()))
@@ -95,7 +94,7 @@ class CPAnalyticsDashboard:
         classes_graficos = [VerdictsChart, LanguagesChart, TagsFrequencyChart]
         mapa_classes = {cls.name: cls for cls in classes_graficos}
         
-        selecionados = c2.multiselect("Gráficos", options=list(mapa_classes.keys()), default=[VerdictsChart.name, TagsFrequencyChart.name])
+        selecionados = c2.multiselect("Charts", options=list(mapa_classes.keys()), default=[VerdictsChart.name, TagsFrequencyChart.name])
 
         st.divider()
         colunas = st.columns(2)
@@ -109,14 +108,14 @@ class CPAnalyticsDashboard:
     def run(self):
         self._render_sidebar()
         if not self.analytics:
-            st.info("👈 Digite o(s) handle(s) na barra lateral para começar.")
+            st.info("👈 Type the handle(s) in the sidebar to start.")
             return
 
         st.title(f"Dashboard")
-        t1, t2, t3 = st.tabs(["🎯 Upsolving", "🏆 Contests", "📊 Gráficos"])
-        # with t1: self._render_upsolving_tab()
+        t1, t2, t3 = st.tabs(["📊 Charts", "🏆 Contests", "🎯 Upsolving"])
+        with t1: self._render_charts_tab()
         # with t2: self._render_contests_tab()
-        # with t3: self._render_charts_tab()
+        # with t3: self._render_upsolving_tab()
 
 if __name__ == "__main__":
     app = CPAnalyticsDashboard()

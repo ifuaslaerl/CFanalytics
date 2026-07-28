@@ -4,7 +4,7 @@ import plotly.express as px
 from analytics import Analytics
 
 class BaseChart(ABC):
-    name: str = "Gráfico Genérico"
+    name: str = "Chart"
 
     def __init__(self, analytics: Analytics, start_ts: int = None, end_ts: int = None):
         self.analytics = analytics
@@ -18,19 +18,24 @@ class BaseChart(ABC):
     def render(self, container):
         fig = self.build_figure()
         if fig:
-            container.plotly_chart(fig, use_container_width=True)
+            container.plotly_chart(fig, width='stretch')
         else:
-            container.info(f"Sem dados suficientes para: {self.name}")
+            container.info(f"Not enough data on: {self.name}")
 
 class VerdictsChart(BaseChart):
-    name = "Distribuição de Veredictos"
+    name = "Veredicts"
 
     def build_figure(self):
         stats = self.analytics.get_verdict_stats(self.start_ts, self.end_ts)
         if not stats: return None
-        df = pd.DataFrame(list(stats.items()), columns=["Veredicto", "Quantidade"])
-        color_map = {"OK": "#28a745", "WRONG_ANSWER": "#dc3545", "TIME_LIMIT_EXCEEDED": "#ffc107"}
-        return px.pie(df, values="Quantidade", names="Veredicto", hole=0.4, color="Veredicto", color_discrete_map=color_map)
+        df = pd.DataFrame(list(stats.items()), columns=["Veredict", "Amount"])
+        color_map = {"OK": "#28a745",
+                    "WRONG_ANSWER": "#dc3545",
+                    "TIME_LIMIT_EXCEEDED": "#fbff00",
+                    "RUNTIME_ERROR": "#ff6a07",
+                    "COMPILATION_ERROR": "#828180",
+                    "SKIPPED": "#ffffff"}
+        return px.pie(df, values="Amount", names="Veredict", hole=0.4, color="Veredict", color_discrete_map=color_map)
 
 class LanguagesChart(BaseChart):
     name = "Linguagens Utilizadas"
@@ -42,11 +47,13 @@ class LanguagesChart(BaseChart):
         return px.bar(df, x="Linguagem", y="Submissões", color="Submissões", color_continuous_scale="Blues")
 
 class TagsFrequencyChart(BaseChart):
-    name = "Frequência de Tags (Estudo)"
+    name = "Tags"
 
     def build_figure(self):
         stats = self.analytics.get_tags_stats(self.start_ts, self.end_ts)
         if not stats: return None
-        df = pd.DataFrame(list(stats.items())[:15], columns=["Tag", "Frequência"])
-        df = df.sort_values(by="Frequência", ascending=True) 
-        return px.bar(df, x="Frequência", y="Tag", orientation='h', color="Frequência", color_continuous_scale="Viridis")
+        df = pd.DataFrame(list(stats.items())[:15], columns=["Tag", "Frequency"])
+        df = df.sort_values(by="Frequency", ascending=True) 
+        fig = px.bar(df, x="Frequency", y="Tag", orientation='h', color="Frequency", color_continuous_scale="Viridis")
+        fig.update_layout(yaxis_title=None, xaxis_title=None)
+        return fig
